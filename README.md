@@ -3,8 +3,10 @@
 Requires gensim (a setup.py will come soon)
 
 To reproduce 3x3 original experiments from Hill:2015, run:
-`ln -s /mnt/store/home/hlt/wordsim resources'
-`python src/wordsim/test.py
+
+`ln -s /mnt/store/home/hlt/wordsim resources`
+
+`python src/wordsim/test.py`
 
 The output will get prettier soon
 
