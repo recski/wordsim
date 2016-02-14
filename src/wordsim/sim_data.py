@@ -9,8 +9,7 @@ class SimData():
 
     @staticmethod
     def create_from_file(file_name, data_type):
-        type_map = {'simlex': SimLexData}
-        sd_type = type_map[data_type]
+        sd_type = type_to_class[data_type]
         sd = sd_type()
         with open(file_name) as f:
             for line_no, line in enumerate(f):
@@ -47,6 +46,30 @@ class SimLexData(SimData):
         sim = float(fields[3])
         return w1, w2, sim
 
+class WS353Data(SimData):
+    @staticmethod
+    def parse_line(line, line_no):
+        if line_no == 0:
+            return
+        fields = line.strip().decode('utf-8').split('\t')
+        w1, w2 = fields[:2]
+        sim = float(fields[2])
+        return w1, w2, sim
+
+class MENData(SimData):
+    @staticmethod
+    def parse_line(line, line_no):
+        if line_no == 0:
+            return
+        fields = line.strip().decode('utf-8').split()
+        w1, w2 = fields[:2]
+        sim = float(fields[2])
+        return w1, w2, sim
+
+type_to_class = {
+    'simlex': SimLexData,
+    'MEN': MENData,
+    'ws353': WS353Data}
 
 def test():
     """read similarity data from specified file and output top 5 word pairs"""
