@@ -17,7 +17,7 @@ class Word2VecEmbedding(Embedding):
     def load_model(model_fn, model_type):
         logging.info('Loading model: {0}'.format(model_fn))
         if model_type == 'word2vec':
-            model = Word2Vec.load_word2vec_format(model_fn, binary=False)
+            model = Word2Vec.load_word2vec_format(model_fn, binary=True)
         elif model_type == 'gensim':
             model = Word2Vec.load(model_fn)
         else:
