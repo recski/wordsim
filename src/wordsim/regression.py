@@ -1,4 +1,4 @@
-"""many classes and funcctions taken from github.com/judtacs/semeval/"""
+"""many classes and functions taken from github.com/judtacs/semeval/"""
 
 from sklearn import linear_model
 from sklearn import kernel_ridge
@@ -35,8 +35,6 @@ def parse_args():
         '-train', help='--train', action='store_true', default=False)
     p.add_argument(
         '-tag', help='--tag', action='store_true', default=False)
-    p.add_argument(
-        '-load_feats', help='--load_feats', action='store_true', default=False)
 
     return p.parse_args()
 
@@ -130,7 +128,7 @@ class RegressionModel:
 class Trainer(object):
 
     def __init__(self, conf,
-                 load_feats=False, input_=None, train_labels_fn=None,
+                 input_=None, train_labels_fn=None,
                  model='model', model_name='sklearn_svr', feat_select=True,
                  feat_select_thr=0.02, degree=3, kernel='poly', C=100):
         self.model = model
@@ -143,22 +141,16 @@ class Trainer(object):
         self.input_ = input_
         self.train_labels_fn = train_labels_fn
         self.conf = conf
-        self.load_feats = load_feats
 
     def get_train_data(self):
-        self.train_labels = array(
-            [float(l.strip()) for l in open(self.train_labels_fn)])
-        if self.load_feats is True:
-            self.train_data = cPickle.load(open(self.input_))['data']
-            self.feats = cPickle.load(open(self.input_))['feats']
-        else:
-            a = Featurizer(self.conf)
-            fh = open(self.input_)
-            logging.info('featurizing train...')
-            sample = a.featurize(fh)
-            logging.info('Converting table...')
-            self.train_data = a.convert_to_table(sample)
-            self.feats = a._feat_order
+        a = Featurizer(self.conf)
+        fh = open(self.input_)
+        logging.info('featurizing train...')
+        sample, labels = a.featurize(fh)
+        self.train_labels = array(labels)
+        logging.info('Converting table...')
+        self.train_data = a.convert_to_table(sample)
+        self.feats = a._feat_order
 
     def featurize_train(self, conf):
         self.get_train_data()
@@ -176,9 +168,8 @@ class Trainer(object):
 
 class Tagger(object):
 
-    def __init__(self, load_feats=True, input_=None, model='model',
+    def __init__(self, input_=None, model='model',
                  outputs=None, gold=None, conf=None):
-        self.load_feats = load_feats
         self.input_fns = input_.split(',')
         self.model = model
         if outputs is not None:
@@ -192,19 +183,16 @@ class Tagger(object):
         self.conf = conf
 
     def get_inputs(self):
-        if self.load_feats:
-            return [cPickle.load(open(f))['data'] for f in self.input_fns]
-        else:
+        a = Featurizer(self.conf)
+        l = []
+        for input_ in self.input_fns:
             a = Featurizer(self.conf)
-            l = []
-            for input_ in self.input_fns:
-                a = Featurizer(self.conf)
-                fh = open(input_)
-                logging.info('featurizing input {0}...'.format(input_))
-                sample = a.featurize(fh)
-                logging.info('Converting table...')
-                l.append(a.convert_to_table(sample))
-            return l
+            fh = open(input_)
+            logging.info('featurizing input {0}...'.format(input_))
+            sample, labels = a.featurize(fh)
+            logging.info('Converting table...')
+            l.append(a.convert_to_table(sample))
+        return l
 
     def tag(self):
         self.regression_model = cPickle.load(open(self.model))

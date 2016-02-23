@@ -6,6 +6,8 @@ from argparse import ArgumentParser
 from numpy import array
 import logging
 
+from sim_data import SimData
+
 def parse_args():
     p = ArgumentParser()
     p.add_argument(
@@ -49,14 +51,17 @@ class Featurizer(object):
         self.models = [DummyModel()]
 
     def featurize(self, stream):
-        sample = []
-        for line in stream:
-            w1, w2 = line.split('\t')
-            pair = WordPair()
-            for model in self.models:
-                pair.features.update(model.featurize(w1, w2))
-            sample.append(pair)
-        return sample
+        sample, labels = [], []
+        for data_type, fns in self.conf.get('data', 'train').iteritems():
+            for fn in fns:
+                sim_data = SimData.create_from_file(fn, data_type)
+                for (w1, w2), sim in sim_data.pairs.iteritems():
+                    pair = WordPair()
+                    for model in self.models:
+                        pair.features.update(model.featurize(w1, w2))
+                    sample.append(pair)
+                    labels.append(sim)
+        return sample, labels
 
     def convert_to_table(self, sample):
         table = []
@@ -75,16 +80,18 @@ class Featurizer(object):
                     table[-1][self._feat_order[feat]] = sc
         return array(table)
 
-    def dump_data(self, data, fn):
+    def dump_data(self, data, labels, fn):
         fh = open(fn, 'w')
-        d = {'data': data, 'config': self.conf, 'feats': self._feat_order}
+        d = {
+            'data': data, 'labels': labels, 'config': self.conf,
+            'feats': self._feat_order}
         cPickle.dump(d, fh)
 
     def preproc_data(self, fn, output_fn):
         fh = open(fn)
-        sample = self.featurize(fh)
+        sample, labels = self.featurize(fh)
         table = self.convert_to_table(sample)
-        self.dump_data(table, output_fn)
+        self.dump_data(table, labels, output_fn)
 
 
 def main():
