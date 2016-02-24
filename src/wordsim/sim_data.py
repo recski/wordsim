@@ -68,7 +68,7 @@ class MENData(SimData):
 
 type_to_class = {
     'simlex': SimLexData,
-    'MEN': MENData,
+    'men': MENData,
     'ws353': WS353Data}
 
 def test():

@@ -1,42 +1,39 @@
 """many classes and funcctions taken from github.com/judtacs/semeval/"""
 
-import cPickle
-from ConfigParser import ConfigParser
-from argparse import ArgumentParser
+import os
+import random
 from numpy import array
-import logging
 
 from sim_data import SimData
-
-def parse_args():
-    p = ArgumentParser()
-    p.add_argument(
-        '-c', '--conf', help='config file', default='config', type=str)
-    p.add_argument(
-        '-i', '--inputs', help='input list, separated by ,', type=str)
-    p.add_argument(
-        '-o', '--outputs', help='output list, separated by ,', type=str)
-    return p.parse_args()
-
-
-def read_config(args):
-    conf = ConfigParser()
-    conf.read(args.conf)
-    return conf
+from embedding import type_to_class
 
 class Model(object):
 
     def featurize(self, w1, w2):
         raise NotImplementedError
 
+class EmbeddingModel(Model):
+
+    def __init__(self, embedding, name):
+        self.embedding = embedding
+        self.name = name
+
+    def featurize(self, w1, w2):
+        sim = self.embedding.get_sim(w1, w2)
+        if not sim:
+            print w1, w2, sim
+            return {}
+        return {self.name: sim}
+
 class DummyModel(Model):
 
     def featurize(self, w1, w2):
-        return {"a": 0.3, "b": 0.5, "c": 0.7}
+        return dict([(k, random.random()) for k in ('a', 'b', 'c', 'd')])
 
 class WordPair(object):
 
-    def __init__(self):
+    def __init__(self, w1, w2):
+        self.pair = (w1, w2)
         self.features = {}
 
 class Featurizer(object):
@@ -48,19 +45,29 @@ class Featurizer(object):
         self._feat_i = 0
 
     def get_models(self, conf):
-        self.models = [DummyModel()]
+        self.models = []
+        for e_type in self.conf.options('embeddings'):
+            fn = self.conf.get('embeddings', e_type)
+            path = os.path.join(
+                self.conf.get('global', 'embeddings_path'), e_type, fn)
+            e_class = type_to_class[e_type]
+            embedding = e_class(path)
+            model = EmbeddingModel(embedding, e_type)
+            self.models.append(model)
 
-    def featurize(self, stream):
+    def featurize(self):
         sample, labels = [], []
-        for data_type, fns in self.conf.get('data', 'train').iteritems():
-            for fn in fns:
-                sim_data = SimData.create_from_file(fn, data_type)
-                for (w1, w2), sim in sim_data.pairs.iteritems():
-                    pair = WordPair()
-                    for model in self.models:
-                        pair.features.update(model.featurize(w1, w2))
-                    sample.append(pair)
-                    labels.append(sim)
+        for data_type in self.conf.options('train_data'):
+            fn = self.conf.get('train_data', data_type)
+            path = os.path.join(
+                self.conf.get('global', 'data_path'), data_type, fn)
+            sim_data = SimData.create_from_file(path, data_type)
+            for (w1, w2), sim in sim_data.pairs.iteritems():
+                pair = WordPair(w1, w2)
+                for model in self.models:
+                    pair.features.update(model.featurize(w1, w2))
+                sample.append(pair)
+                labels.append(sim)
         return sample, labels
 
     def convert_to_table(self, sample):
@@ -79,36 +86,3 @@ class Featurizer(object):
                 else:
                     table[-1][self._feat_order[feat]] = sc
         return array(table)
-
-    def dump_data(self, data, labels, fn):
-        fh = open(fn, 'w')
-        d = {
-            'data': data, 'labels': labels, 'config': self.conf,
-            'feats': self._feat_order}
-        cPickle.dump(d, fh)
-
-    def preproc_data(self, fn, output_fn):
-        fh = open(fn)
-        sample, labels = self.featurize(fh)
-        table = self.convert_to_table(sample)
-        self.dump_data(table, labels, output_fn)
-
-
-def main():
-    args = parse_args()
-    conf = read_config(args)
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s : " +
-        "%(module)s (%(lineno)s) - %(levelname)s - %(message)s")
-
-    a = Featurizer(conf)
-    inputs = args.inputs.split(',')
-    outputs = args.outputs.split(',')
-    for i, f in enumerate(inputs):
-        of = outputs[i]
-        a.preproc_data(f, of)
-    exit()
-
-if __name__ == "__main__":
-    main()

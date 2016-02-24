@@ -60,7 +60,7 @@ class WordSimTest():
 class AllTests(WordSimTest):
     sim_data_files = {
         'ws353': ['combined.tab'],
-        'MEN': ['MEN_dataset_natural_form_full'],
+        'men': ['MEN_dataset_natural_form_full'],
         'simlex': ['SimLex-999.txt']}
     embedding_files = {
         'word2vec': ['GoogleNews-vectors-negative300.bin'],
