@@ -2,6 +2,7 @@
 
 from ConfigParser import ConfigParser
 import logging
+import os
 import sys
 
 from sklearn import cross_validation, svm
@@ -11,7 +12,8 @@ from scipy.stats import pearsonr
 from numpy import array
 
 from featurizer import Featurizer
-
+from sim_data import SimData
+from models import get_models
 
 def pearson_scorer(estimator, X, y):
     logging.info('predicting ...')
@@ -24,10 +26,10 @@ class Regression(object):
     def __init__(self, conf):
         self.conf = conf
 
-    def featurize_data(self):
+    def featurize_data(self, data, models):
         logging.info('featurizing train...')
         f = Featurizer(self.conf)
-        sample, labels = f.featurize()
+        sample, labels = f.featurize(data, models)
         self.labels = array(labels)
         logging.info('converting table...')
         self.data = f.convert_to_table(sample)
@@ -54,7 +56,8 @@ class Regression(object):
             p = self.pipeline.predict(X_test)
             corrs.append(pearsonr(p, y_test)[0])
 
-        print "average correlation: {0}".format(sum(corrs) / len(corrs))
+        logging.warning(
+            "average correlation: {0}".format(sum(corrs) / len(corrs)))
 
         # self.pipeline.fit(self.data, self.labels)
         # p = self.pipeline.predict(self.data)
@@ -66,18 +69,35 @@ class Regression(object):
         #     scoring=pearson_scorer)
         # logging.info("scores: {0}".format(scores))
 
+def get_data(conf):
+    datasets = {}
+    for data_type in conf.options('train_data'):
+        fn = conf.get('train_data', data_type)
+        path = os.path.join(
+            conf.get('global', 'data_path'), data_type, fn)
+        datasets[data_type] = SimData.create_from_file(path, data_type)
+    return datasets
 
 def main():
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.WARNING,
         format="%(asctime)s : " +
         "%(module)s (%(lineno)s) - %(levelname)s - %(message)s")
 
     conf = ConfigParser()
     conf.read(sys.argv[1])
-    r = Regression(conf)
-    r.featurize_data()
-    r.evaluate()
+
+    logging.warning('loading datasets...')
+    datasets = get_data(conf)
+    logging.warning('loaded these: {0}'.format(datasets.keys()))
+    logging.warning('loading models...')
+    models = get_models(conf)
+    logging.warning('evaluating...')
+    for data_type, data in datasets.iteritems():
+        logging.warning('data: {0}'.format(data_type))
+        r = Regression(conf)
+        r.featurize_data(data, models)
+        r.evaluate()
 
 if __name__ == "__main__":
     main()
