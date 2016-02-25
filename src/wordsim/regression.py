@@ -27,7 +27,7 @@ class Regression(object):
         self.conf = conf
 
     def featurize_data(self, data, models):
-        logging.info('featurizing train...')
+        logging.warning('featurizing train...')
         f = Featurizer(self.conf)
         sample, labels = f.featurize(data, models)
         self.labels = array(labels)

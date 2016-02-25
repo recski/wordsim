@@ -60,7 +60,11 @@ class MachineModel(Model):
 
 def get_models(conf):
     models = []
-    models.append(MachineModel(conf, 'similarity_machine_longman'))
+    for d in ('longman', 'collins', 'wikt'):
+        models.append(
+            MachineModel(conf, 'similarity_machine_{0}'.format(d)))
+        models.append(
+            MachineModel(conf, 'similarity_machine_{0}_expand'.format(d)))
     for e_type in conf.options('embeddings'):
         fn = conf.get('embeddings', e_type)
         path = os.path.join(
