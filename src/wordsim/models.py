@@ -4,28 +4,43 @@ import random
 
 from embedding import type_to_class
 
+
 class Model(object):
+    def __init__(self):
+        self.sim_cache = {}
 
     def featurize(self, w1, w2):
+        sorted_pair = tuple(sorted((w1, w2)))
+        if sorted_pair not in self.sim_cache:
+            self.sim_cache[sorted_pair] = dict(self._featurize(w1, w2))
+        return self.sim_cache[sorted_pair]
+
+    def _featurize(self, w1, w2):
         raise NotImplementedError
+
 
 class EmbeddingModel(Model):
 
     def __init__(self, embedding, name):
+        super(self.__class__, self).__init__()
         self.embedding = embedding
         self.name = name
 
-    def featurize(self, w1, w2):
+    def _featurize(self, w1, w2):
         sim = self.embedding.get_sim(w1, w2)
         if not sim:
             logging.debug("no sim: {0}".format(w1, w2, sim))
-            return {}
-        return {self.name: sim}
+            return
+        else:
+            yield self.name, sim
+
 
 class DummyModel(Model):
 
-    def featurize(self, w1, w2):
-        return dict([(k, random.random()) for k in ('a', 'b', 'c', 'd')])
+    def _featurize(self, w1, w2):
+        for k in ('a', 'b', 'c', 'd'):
+            yield k, random.random()
+
 
 class MachineSimilarity():
 
@@ -48,19 +63,57 @@ class MachineSimilarity():
                 sim_type)
         return word_sims
 
+
 class MachineModel(Model):
     def __init__(self, conf, name):
+        super(self.__class__, self).__init__()
         self.ms = MachineSimilarity(name, name, conf)
         self.sim_functions = self.ms.get_word_sims()
 
-    def featurize(self, w1, w2):
-        return dict(
-            [(name, fnc(w1, w2))
-             for name, fnc in self.sim_functions.iteritems()])
+    def _featurize(self, w1, w2):
+        for name, fnc in self.sim_functions.iteritems():
+            yield name, fnc(w1, w2)
+
+
+class CharacterModel(Model):
+    def __init__(self, conf):
+        super(self.__class__, self).__init__()
+        self.ns = map(int, conf.get('characters', 'ns').split(','))
+        self.types = conf.get('characters', 'types').split(',')
+        self.word_cache = {}
+
+    def get_ngrams(self, word, n):
+        ngrams = set()
+        for i in xrange(len(word) - n + 1):
+            ngrams.add(word[i:i + n])
+        return ngrams
+
+    def sim_func(self, ng1, ng2, sim_type):
+        if sim_type == 'jaccard':
+            return float(len(ng1 & ng2)) / len(ng1 | ng2)
+        elif sim_type == 'dice':
+            return float(2 * len(ng1 & ng2)) / (len(ng1) + len(ng2))
+        else:
+            assert False
+
+    def _featurize(self, w1, w2):
+        for n in self.ns:
+            ng1 = self.get_ngrams(w1, n)
+            ng2 = self.get_ngrams(w2, n)
+            for sim_type in self.types:
+                feat_name = "char_{0}_{1}".format(sim_type, n)
+                try:
+                    feat_value = self.sim_func(ng1, ng2, sim_type)
+                except ZeroDivisionError:
+                    continue
+                yield feat_name, feat_value
+
 
 def get_models(conf):
     models = []
-    for d in ('longman', 'collins', 'wikt'):
+    models.append(CharacterModel(conf))
+    for m_type in conf.options('machines'):
+        d = conf.get('machines', m_type)
         models.append(
             MachineModel(conf, 'similarity_machine_{0}'.format(d)))
         models.append(
