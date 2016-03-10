@@ -1,6 +1,9 @@
 # wordsim
 
-Requires gensim, 4lang (a setup.py will come soon)
+Requires:
+* [gensim](https://radimrehurek.com/gensim/)
+* [4lang](https://github.com/kornai/4lang/tree/recski_thesis) (requires newest version, install with `sudo python setup.py install`)
+* [hunmisc](https://github.com/zseder/hunmisc) (see above)
 
 ### Usage
 
@@ -13,6 +16,8 @@ see config file and code for details, clean-up will come soon
 To reproduce 3x3 original experiments from Hill:2015, run:
 
 `ln -s /mnt/store/home/hlt/wordsim resources`
+
+Or get the resources from [here](http://people.mokk.bme.hu/~recski/stuff/resources.tgz).
 
 `python src/wordsim/test.py`
 
