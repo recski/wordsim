@@ -116,8 +116,6 @@ def get_models(conf):
         d = conf.get('machines', m_type)
         models.append(
             MachineModel(conf, 'similarity_machine_{0}'.format(d)))
-        models.append(
-            MachineModel(conf, 'similarity_machine_{0}_expand'.format(d)))
     for e_type in conf.options('embeddings'):
         fn = conf.get('embeddings', e_type)
         path = os.path.join(

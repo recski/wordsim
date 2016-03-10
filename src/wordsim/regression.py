@@ -15,6 +15,7 @@ from featurizer import Featurizer
 from sim_data import SimData
 from models import get_models
 
+
 def pearson_scorer(estimator, X, y):
     logging.info('predicting ...')
     predicted = estimator.predict(y)
@@ -69,6 +70,7 @@ class Regression(object):
         #     scoring=pearson_scorer)
         # logging.info("scores: {0}".format(scores))
 
+
 def get_data(conf):
     datasets = {}
     for data_type in conf.options('train_data'):
@@ -78,9 +80,10 @@ def get_data(conf):
         datasets[data_type] = SimData.create_from_file(path, data_type)
     return datasets
 
+
 def main():
     logging.basicConfig(
-        level=logging.WARNING,
+        level=logging.INFO,
         format="%(asctime)s : " +
         "%(module)s (%(lineno)s) - %(levelname)s - %(message)s")
 
