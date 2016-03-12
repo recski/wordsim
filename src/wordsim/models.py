@@ -111,7 +111,8 @@ class CharacterModel(Model):
 
 def get_models(conf):
     models = []
-    models.append(CharacterModel(conf))
+    if conf.getboolean('characters', 'enabled'):
+        models.append(CharacterModel(conf))
     for m_type in conf.options('machines'):
         d = conf.get('machines', m_type)
         models.append(
