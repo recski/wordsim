@@ -34,8 +34,8 @@ The path to the [4lang](https://github.com/kornai/4lang/tree/master) folder must
 
 To add a new pair to the set run:
 
-`./add_wordpair_to_simlex_test.sh WORD1 WORD2`
+`scripts/add_wordpair_to_simlex_test.sh WORD1 WORD2`
 
 To run the wordsim regression (src/regression.py) on the simlex test set run:
 
-`./run_simlex_test.sh`
+`scripts/run_simlex_test.sh`
