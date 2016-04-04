@@ -30,7 +30,7 @@ the numbers will be somewhat higher.
 ### SimLex Test
 
 Wordsim is able to create test wordpair set from SimLex data. 
-The path to the [4lang](https://github.com/kornai/4lang/tree/recski_thesis) folder must be defined as an environment variable with the following key: `FOURLANGPATH`.
+The path to the [4lang](https://github.com/kornai/4lang/tree/master) folder must be defined as an environment variable with the following key: `FOURLANGPATH`.
 
 To add a new pair to the set run:
 
