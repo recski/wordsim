@@ -27,3 +27,15 @@ The mikolov (word2vec) numbers will be based on a larger embedding than the
 one used in the paper (they trained a model of their own, I don't want to),
 the numbers will be somewhat higher.
 
+### SimLex Test
+
+Wordsim is able to create test wordpair set from SimLex data. 
+The path to the [4lang](https://github.com/kornai/4lang/tree/master) folder must be defined as an environment variable with the following key: `FOURLANGPATH`.
+
+To add a new pair to the set run:
+
+`scripts/add_wordpair_to_simlex_test.sh WORD1 WORD2`
+
+To run the wordsim regression (src/regression.py) on the simlex test set run:
+
+`scripts/run_simlex_test.sh`

@@ -41,3 +41,16 @@ class Featurizer(object):
                 else:
                     table[-1][self._feat_order[feat]] = sc
         return array(table)
+
+    def convert_to_wordpairs(self, sample):
+        table = []
+        header = ["word1", "word2"]
+        for key in sample[0].features:
+            split = key.split("_similarity")
+            header.append(split[0])
+        header.extend(["4lang", "SimLex", "diff"])
+        for s in sample:
+            table.append(s.pair)
+            #print s.pair[0],' ',s.pair[1],'\n'
+            #print s.features,'\n'
+        return header, array(table)
