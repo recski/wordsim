@@ -1,3 +1,4 @@
+from ConfigParser import NoSectionError
 import logging
 import os
 import random
@@ -114,15 +115,24 @@ def get_models(conf):
     if conf.getboolean('characters', 'enabled'):
         models.append(CharacterModel(conf))
     for m_type in conf.options('machines'):
-        d = conf.get('machines', m_type)
-        models.append(
-            MachineModel(conf, 'similarity_machine_{0}'.format(d)))
+        try:
+            d = conf.get('machines', m_type)
+            model_name = 'similarity_machine_{0}'.format(d)
+            conf.options(model_name)
+        except NoSectionError:
+            continue
+        else:
+            models.append(MachineModel(conf, model_name))
     for e_type in conf.options('embeddings'):
-        fn = conf.get('embeddings', e_type)
-        path = os.path.join(
-            conf.get('global', 'embeddings_path'), e_type, fn)
-        e_class = type_to_class[e_type]
-        embedding = e_class(path)
-        model = EmbeddingModel(embedding, e_type)
-        models.append(model)
+        try:
+            e_class = type_to_class[e_type]
+        except KeyError:
+            continue
+        else:
+            fn = conf.get('embeddings', e_type)
+            path = os.path.join(
+                conf.get('global', 'embeddings_path'), e_type, fn)
+            embedding = e_class(path)
+            model = EmbeddingModel(embedding, e_type)
+            models.append(model)
     return models

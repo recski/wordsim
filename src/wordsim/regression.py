@@ -13,7 +13,7 @@ from scipy.stats import pearsonr
 from numpy import array
 
 from featurizer import Featurizer
-from sim_data import SimData
+from sim_data import SimData, type_to_class
 from models import get_models
 
 
@@ -102,6 +102,8 @@ class Regression(object):
 def get_data(conf):
     datasets = {}
     for data_type in conf.options('train_data'):
+        if data_type not in type_to_class:
+            continue
         fn = conf.get('train_data', data_type)
         path = os.path.join(
             conf.get('global', 'data_path'), data_type, fn)
@@ -123,7 +125,7 @@ def main():
         format="%(asctime)s : " +
         "%(module)s (%(lineno)s) - %(levelname)s - %(message)s")
 
-    conf = ConfigParser()
+    conf = ConfigParser(os.environ)
     conf.read(sys.argv[1])
 
     logging.warning('loading datasets...')
