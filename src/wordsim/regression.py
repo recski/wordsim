@@ -37,6 +37,8 @@ class Regression(object):
         #get word pairs and headers
         self.header, self.words = f.convert_to_wordpairs(sample)
 
+        logging.info('HEADERS: {0}'.format(self.header))
+
         logging.info('converting table...')
         self.data = f.convert_to_table(sample)
         logging.info('data shape: {0}'.format(self.data.shape))
@@ -45,6 +47,18 @@ class Regression(object):
 
     def evaluate(self):
         if self.data.shape[0] < 100:
+            features_str = "\n"
+            for headerItem in self.header:
+                features_str += "{0}\t".format(headerItem)
+            features_str += "\n"
+            for i, pred in enumerate(self.data):
+                features_str += "{0}\t{1}\t"\
+                    .format(self.words[i][0],
+                            self.words[i][1])
+                for feature in pred:
+                    features_str += "{0}\t".format(feature)
+                features_str += "\n"
+            logging.info(features_str)
             return
         self.pipeline = Pipeline(steps=[
             # ('univ_select', SelectKBest(k=10, score_func=f_regression)),
