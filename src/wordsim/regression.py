@@ -9,12 +9,18 @@ import time
 from sklearn import cross_validation, svm
 from sklearn.feature_selection import VarianceThreshold, SelectKBest, f_regression  # nopep8
 from sklearn.pipeline import Pipeline
-from scipy.stats import pearsonr
+from scipy.stats import pearsonr, spearmanr
 from numpy import array
 
 from featurizer import Featurizer
 from sim_data import SimData, type_to_class
 from models import get_models
+
+
+def spearman_scorer(estimator, X, y):
+    logging.info('predicting ...')
+    predicted = estimator.predict(y)
+    return spearmanr(list(predicted), y)
 
 
 def pearson_scorer(estimator, X, y):
@@ -34,7 +40,7 @@ class Regression(object):
         sample, labels = f.featurize(data, models)
         self.labels = array(labels)
 
-        #get word pairs and headers
+        # get word pairs and headers
         self.header, self.words = f.convert_to_wordpairs(sample)
 
         logging.info('converting table...')
@@ -78,11 +84,13 @@ class Regression(object):
                             self.words[sum(test_index_lens) + i][1])
                 for feature in X_test[i]:
                     result_str += "{0}\t".format(feature)
-                result_str += "{0}\t{1}\t{2}\t{3}\n".format(pred, y_test[i], abs(pred-y_test[i]), iter)
+                result_str += "{0}\t{1}\t{2}\t{3}\n".format(
+                    pred, y_test[i], abs(pred - y_test[i]), iter)
             test_index_lens.append(len(test_index))
-            iter+=1
+            iter += 1
 
-            corrs.append(pearsonr(p, y_test)[0])
+            # corrs.append(pearsonr(p, y_test)[0])
+            corrs.append(spearmanr(p, y_test)[0])
 
         print_results(result_str)
         logging.warning(
@@ -110,6 +118,7 @@ def get_data(conf):
         datasets[data_type] = SimData.create_from_file(path, data_type)
     return datasets
 
+
 def print_results(str):
     if not os.path.exists('results'):
         os.makedirs('results')
@@ -118,6 +127,7 @@ def print_results(str):
     file_str = 'results/res' + date_str + time_str + '.txt'
     file = open(file_str, 'w')
     file.write(str)
+
 
 def main():
     logging.basicConfig(
