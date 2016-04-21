@@ -1,3 +1,4 @@
+from ConfigParser import NoSectionError
 import logging
 import os
 import random
@@ -49,12 +50,15 @@ class MachineSimilarity():
         from fourlang.similarity import WordSimilarity as FourlangWordSimilarity  # nopep8
         self.fourlang_sim = FourlangWordSimilarity(cfg, section)
         self.sim_name = sim_name
-        self.sim_types = cfg.get(section, 'sim_types').split('|')
-        for sim_type in self.sim_types:
-            if sim_type not in FourlangWordSimilarity.sim_types:
-                raise Exception(
-                    'unknown 4lang similarity: {0}'.format(sim_type))
 
+        # TODO: to delete
+        # self.sim_types = cfg.get(section, 'sim_types').split('|')
+        # for sim_type in self.sim_types:
+        #     if sim_type not in FourlangWordSimilarity.sim_types:
+        #         raise Exception(
+        #             'unknown 4lang similarity: {0}'.format(sim_type))
+
+    # TODO: to delete
     def get_word_sims(self):
         word_sims = {}
         for sim_type in self.sim_types:
@@ -68,11 +72,17 @@ class MachineModel(Model):
     def __init__(self, conf, name):
         super(self.__class__, self).__init__()
         self.ms = MachineSimilarity(name, name, conf)
-        self.sim_functions = self.ms.get_word_sims()
+        # TODO: to delete
+        # self.sim_functions = self.ms.get_word_sims()
 
     def _featurize(self, w1, w2):
-        for name, fnc in self.sim_functions.iteritems():
-            yield name, fnc(w1, w2)
+        features = self.ms.fourlang_sim.word_similarities(w1, w2)
+        for key, value in features.iteritems():
+            yield key, value
+
+        # TODO: to delete
+        # for name, fnc in self.sim_functions.iteritems():
+        #     yield name, fnc(w1, w2)
 
 
 class CharacterModel(Model):
@@ -114,15 +124,24 @@ def get_models(conf):
     if conf.getboolean('characters', 'enabled'):
         models.append(CharacterModel(conf))
     for m_type in conf.options('machines'):
-        d = conf.get('machines', m_type)
-        models.append(
-            MachineModel(conf, 'similarity_machine_{0}'.format(d)))
+        try:
+            d = conf.get('machines', m_type)
+            model_name = 'similarity_machine_{0}'.format(d)
+            conf.options(model_name)
+        except NoSectionError:
+            continue
+        else:
+            models.append(MachineModel(conf, model_name))
     for e_type in conf.options('embeddings'):
-        fn = conf.get('embeddings', e_type)
-        path = os.path.join(
-            conf.get('global', 'embeddings_path'), e_type, fn)
-        e_class = type_to_class[e_type]
-        embedding = e_class(path)
-        model = EmbeddingModel(embedding, e_type)
-        models.append(model)
+        try:
+            e_class = type_to_class[e_type]
+        except KeyError:
+            continue
+        else:
+            fn = conf.get('embeddings', e_type)
+            path = os.path.join(
+                conf.get('global', 'embeddings_path'), e_type, fn)
+            embedding = e_class(path)
+            model = EmbeddingModel(embedding, e_type)
+            models.append(model)
     return models
