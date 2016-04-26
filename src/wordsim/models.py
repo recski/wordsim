@@ -22,18 +22,67 @@ class Model(object):
 
 class EmbeddingModel(Model):
 
-    def __init__(self, embedding, name):
+    @staticmethod
+    def get_unigram_freqs(fn):
+        if fn is None:
+            return
+        unigram_freqs = {}
+        for i, line in enumerate(open(fn)):
+            try:
+                freq, word = line.strip().split()
+                unigram_freqs[word] = int(freq)
+            except:
+                logging.warning('error on freq line {0}: {1}'.format(i, line))
+
+        return unigram_freqs
+
+    def __init__(self, embedding, name, machine_model=None, freq_fn=None):
         super(self.__class__, self).__init__()
         self.embedding = embedding
         self.name = name
+        self.machine_model = machine_model
+        self.unigram_freqs = EmbeddingModel.get_unigram_freqs(freq_fn)
+
+    def get_fourlang_feats(self, w1, w2):
+        lemma1, lemma2 = [
+            self.machine_model.ms.fourlang_sim.lemmatizer.lemmatize(
+                word, defined=self.machine_model.ms.fourlang_sim.defined_words,
+                stem_first=True)
+            for word in (w1, w2)]
+        if lemma1 is None:
+            logging.warning('OOV: {0}'.format(w1))
+            av_hyp_sim = 0.0
+        elif lemma2 is None:
+            logging.warning('OOV: {0}'.format(w2))
+            av_hyp_sim = 0.0
+        else:
+            machine1, machine2 = map(
+                lambda m: self.machine_model.ms.fourlang_sim.lexicon.get_machine(  # nopep8
+                    m, allow_new_oov=False),
+                (lemma1, lemma2))
+            hypernyms1 = set([h.printname() for h in machine1.hypernyms()])
+            hypernyms2 = set([h.printname() for h in machine2.hypernyms()])
+            hyp_sims = filter(None, (
+                self.embedding.get_sim(h1, h2)
+                for h1 in hypernyms1 for h2 in hypernyms2))
+            if not hyp_sims:
+                av_hyp_sim = 0.0
+            else:
+                av_hyp_sim = sum(hyp_sims) / len(hyp_sims)
+
+        yield "{0}_hyps".format(self.name), av_hyp_sim
 
     def _featurize(self, w1, w2):
         sim = self.embedding.get_sim(w1, w2)
         if not sim:
             logging.debug("no sim: {0}".format(w1, w2, sim))
-            return
+            yield self.name, 0.0
         else:
             yield self.name, sim
+
+        if self.machine_model is not None:
+            for name, value in self.get_fourlang_feats(w1, w2):
+                yield name, value
 
 
 class DummyModel(Model):
@@ -98,9 +147,9 @@ class CharacterModel(Model):
 
 
 def get_models(conf):
-    models = []
+    models = {}
     if conf.getboolean('characters', 'enabled'):
-        models.append(CharacterModel(conf))
+        models['char'] = CharacterModel(conf)
     for m_type in conf.options('machines'):
         try:
             d = conf.get('machines', m_type)
@@ -109,7 +158,20 @@ def get_models(conf):
         except NoSectionError:
             continue
         else:
-            models.append(MachineModel(conf, model_name))
+            models[model_name] = MachineModel(conf, model_name)
+
+    if conf.getboolean('embeddings', 'enable_4lang'):
+        name = 'similarity_machine_{0}'.format(
+            conf.get('embeddings', '4lang_model'))
+        if name not in models:  # !!! do not put it there
+            fourlang_model_for_embeddings = MachineModel(conf, name)
+        else:
+            fourlang_model_for_embeddings = models[name]
+        freq_file = conf.get('global', 'freq_file')
+    else:
+        fourlang_model_for_embeddings = None
+        freq_file = None
+
     for e_type in conf.options('embeddings'):
         try:
             e_class = type_to_class[e_type]
@@ -120,6 +182,7 @@ def get_models(conf):
             path = os.path.join(
                 conf.get('global', 'embeddings_path'), e_type, fn)
             embedding = e_class(path)
-            model = EmbeddingModel(embedding, e_type)
-            models.append(model)
-    return models
+            model = EmbeddingModel(
+                embedding, e_type, fourlang_model_for_embeddings, freq_file)
+            models[e_type] = model
+    return models.values()

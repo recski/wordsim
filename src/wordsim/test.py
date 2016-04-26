@@ -59,14 +59,14 @@ class WordSimTest():
 
 class AllTests(WordSimTest):
     sim_data_files = {
-        'ws353': ['combined.tab'],
-        'men': ['MEN_dataset_natural_form_full'],
+    #    'ws353': ['combined.tab'],
+    #    'men': ['MEN_dataset_natural_form_full'],
         'simlex': ['SimLex-999.txt']}
     embedding_files = {
-        'word2vec': ['GoogleNews-vectors-negative300.bin'],
-        'huang': ['combined.txt'],
-        'senna': ['combined.txt']}
-# 'glove': ['glove.840B.300d.txt']}
+    #    'word2vec': ['GoogleNews-vectors-negative300.bin'],
+    #    'huang': ['combined.txt'],
+    #    'senna': ['combined.txt']}
+'glove': ['glove.840B.300d.txt']}
 
 
 if __name__ == "__main__":
