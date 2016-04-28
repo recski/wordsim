@@ -34,6 +34,11 @@ class Word2VecEmbedding(Embedding):
         self.model_type = model_type
         self.model = Word2VecEmbedding.load_model(self.fn, self.model_type)
 
+    def get_vec(self, w):
+        if w in self.model:
+            return self.model[w]
+        return None
+
     def get_sim(self, w1, w2):
         if w1 in self.model and w2 in self.model:
             return self.model.similarity(w1, w2)
@@ -69,6 +74,9 @@ class TSVEmbedding(Embedding):
     def __init__(self, fn):
         self.fn = fn
         self.model = TSVEmbedding.load(fn)
+
+    def get_vec(self, w):
+        return self.model.get(w)
 
     def get_sim(self, w1, w2):
         vec1, vec2 = map(self.model.get, (w1, w2))

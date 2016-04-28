@@ -4,6 +4,8 @@ import os
 import random
 
 from embedding import type_to_class
+from gensim.matutils import unitvec
+import numpy as np
 
 
 class Model(object):
@@ -43,7 +45,11 @@ class EmbeddingModel(Model):
         self.machine_model = machine_model
         self.unigram_freqs = EmbeddingModel.get_unigram_freqs(freq_fn)
 
-    def get_fourlang_feats(self, w1, w2):
+    def hypsim(self, w1, w2, threshold=500000000):
+        is_freq_1 = self.unigram_freqs.get(w1, 0) >= threshold
+        is_freq_2 = self.unigram_freqs.get(w2, 0) >= threshold
+        if is_freq_1 and is_freq_2:
+            return
         lemma1, lemma2 = [
             self.machine_model.ms.fourlang_sim.lemmatizer.lemmatize(
                 word, defined=self.machine_model.ms.fourlang_sim.defined_words,
@@ -51,26 +57,60 @@ class EmbeddingModel(Model):
             for word in (w1, w2)]
         if lemma1 is None:
             logging.warning('OOV: {0}'.format(w1))
-            av_hyp_sim = 0.0
+            return
         elif lemma2 is None:
             logging.warning('OOV: {0}'.format(w2))
-            av_hyp_sim = 0.0
-        else:
-            machine1, machine2 = map(
-                lambda m: self.machine_model.ms.fourlang_sim.lexicon.get_machine(  # nopep8
-                    m, allow_new_oov=False),
-                (lemma1, lemma2))
-            hypernyms1 = set([h.printname() for h in machine1.hypernyms()])
-            hypernyms2 = set([h.printname() for h in machine2.hypernyms()])
-            hyp_sims = filter(None, (
-                self.embedding.get_sim(h1, h2)
-                for h1 in hypernyms1 for h2 in hypernyms2))
-            if not hyp_sims:
-                av_hyp_sim = 0.0
-            else:
-                av_hyp_sim = sum(hyp_sims) / len(hyp_sims)
+            return
 
-        yield "{0}_hyps".format(self.name), av_hyp_sim
+        machine1, machine2 = map(
+            lambda m: self.machine_model.ms.fourlang_sim.lexicon.get_machine(  # nopep8
+                m, allow_new_oov=False),
+            (lemma1, lemma2))
+        hypernyms1 = set([h.printname() for h in machine1.hypernyms()])
+        hypernyms2 = set([h.printname() for h in machine2.hypernyms()])
+        hypernyms2 = set([h for h in hypernyms2 if h not in hypernyms1])  # TODO
+        # if (not hypernyms1) or (not hypernyms1):
+        #    return
+
+        hyp_vecs_1 = [v for v in (self.embedding.get_vec(h)
+                                  for h in hypernyms1) if v is not None]
+        hyp_vecs_2 = [v for v in (self.embedding.get_vec(h)
+                                  for h in hypernyms2) if v is not None]
+
+        w1_vec = self.embedding.get_vec(w1)
+        w2_vec = self.embedding.get_vec(w2)
+
+        all_v_1 = hyp_vecs_1 + [w1_vec] if w1_vec is not None else hyp_vecs_1
+        all_v_2 = hyp_vecs_2 + [w2_vec] if w2_vec is not None else hyp_vecs_2
+        if all_v_1 == [] or all_v_2 == []:
+            print 'foo'
+            return
+
+        all_sims = [np.dot(unitvec(v1), unitvec(v2))
+                    for v1 in all_v_1 for v2 in all_v_2]
+        return max(all_sims)
+
+        av_vec1 = sum(hyp_vecs_1)
+        av_vec2 = sum(hyp_vecs_2)
+
+        if is_freq_1:
+            pair = w1_vec, av_vec2
+        elif is_freq_2:
+            pair = av_vec1, w2_vec
+        else:
+            pair = av_vec1, av_vec2
+
+        if isinstance(pair[0], int) or isinstance(pair[1], int):
+            return
+
+        return np.dot(*map(unitvec, pair))
+
+    def get_fourlang_feats(self, w1, w2):
+        hyp_sim = self.hypsim(w1, w2)
+        if hyp_sim:
+            yield "{0}_hyps".format(self.name), hyp_sim
+        else:
+            yield "{0}_hyps".format(self.name), 0
 
     def _featurize(self, w1, w2):
         sim = self.embedding.get_sim(w1, w2)
@@ -81,6 +121,10 @@ class EmbeddingModel(Model):
             yield self.name, sim
 
         if self.machine_model is not None:
+            # fl_feats = list(self.get_fourlang_feats(w1, w2))
+            # if fl_feats:
+            #     print w1, w2, fl_feats
+            #     quit()
             for name, value in self.get_fourlang_feats(w1, w2):
                 yield name, value
 

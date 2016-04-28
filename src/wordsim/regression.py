@@ -10,12 +10,18 @@ import traceback
 from sklearn import cross_validation, svm
 from sklearn.feature_selection import VarianceThreshold, SelectKBest, f_regression  # nopep8
 from sklearn.pipeline import Pipeline
-from scipy.stats import pearsonr
+from scipy.stats import pearsonr, spearmanr
 from numpy import array
 
 from featurizer import Featurizer
 from sim_data import SimData, type_to_class
 from models import get_models
+
+
+def spearman_scorer(estimator, X, y):
+    logging.info('predicting ...')
+    predicted = estimator.predict(y)
+    return spearmanr(list(predicted), y)
 
 
 def pearson_scorer(estimator, X, y):
@@ -105,7 +111,7 @@ class Regression(object):
             test_index_lens.append(len(test_index))
             iter += 1
 
-            corrs.append(pearsonr(p, y_test)[0])
+            corrs.append(spearmanr(p, y_test)[0])
 
         print_results(result_str)
         logging.warning(
