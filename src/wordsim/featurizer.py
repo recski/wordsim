@@ -2,11 +2,13 @@
 
 from numpy import array
 
+
 class WordPair(object):
 
     def __init__(self, w1, w2):
         self.pair = (w1, w2)
         self.features = {}
+
 
 class Featurizer(object):
 
@@ -51,6 +53,6 @@ class Featurizer(object):
         header.extend(["4lang", "SimLex", "diff"])
         for s in sample:
             table.append(s.pair)
-            #print s.pair[0],' ',s.pair[1],'\n'
-            #print s.features,'\n'
+            # print s.pair[0],' ',s.pair[1],'\n'
+            # print s.features,'\n'
         return header, array(table)
