@@ -45,11 +45,9 @@ class EmbeddingModel(Model):
         self.machine_model = machine_model
         self.unigram_freqs = EmbeddingModel.get_unigram_freqs(freq_fn)
 
-    def hypsim(self, w1, w2, threshold=500000000):
+    def hypsim(self, w1, w2, threshold=5000000000):
         is_freq_1 = self.unigram_freqs.get(w1, 0) >= threshold
         is_freq_2 = self.unigram_freqs.get(w2, 0) >= threshold
-        if is_freq_1 and is_freq_2:
-            return
         lemma1, lemma2 = [
             self.machine_model.ms.fourlang_sim.lemmatizer.lemmatize(
                 word, defined=self.machine_model.ms.fourlang_sim.defined_words,
@@ -68,7 +66,8 @@ class EmbeddingModel(Model):
             (lemma1, lemma2))
         hypernyms1 = set([h.printname() for h in machine1.hypernyms()])
         hypernyms2 = set([h.printname() for h in machine2.hypernyms()])
-        hypernyms2 = set([h for h in hypernyms2 if h not in hypernyms1])  # TODO
+        hypernyms2 = set(
+            [h for h in hypernyms2 if h not in hypernyms1])  # TODO
         # if (not hypernyms1) or (not hypernyms1):
         #    return
 
@@ -88,43 +87,60 @@ class EmbeddingModel(Model):
 
         all_sims = [np.dot(unitvec(v1), unitvec(v2))
                     for v1 in all_v_1 for v2 in all_v_2]
-        return max(all_sims)
+        yield "{0}_hypmax".format(self.name), max(all_sims)
+        # ??? This one doesn't seem to help at all (16.05.03)
 
-        av_vec1 = sum(hyp_vecs_1)
-        av_vec2 = sum(hyp_vecs_2)
-
-        if is_freq_1:
-            pair = w1_vec, av_vec2
-        elif is_freq_2:
-            pair = av_vec1, w2_vec
+        if is_freq_1 and is_freq_2:
+            hypsim = self.embedding.get_sim(w1, w2)
+            if not hypsim:
+                hypsim = 0.0
         else:
-            pair = av_vec1, av_vec2
+            # av_vec1 = sum(all_v_1)
+            # av_vec2 = sum(all_v_2)
+            av_vec1 = sum(hyp_vecs_1)
+            av_vec2 = sum(hyp_vecs_2)
 
-        if isinstance(pair[0], int) or isinstance(pair[1], int):
-            return
+            if is_freq_1:
+                pair = w1_vec, av_vec2
+            elif is_freq_2:
+                pair = av_vec1, w2_vec
+            else:
+                pair = av_vec1, av_vec2
 
-        return np.dot(*map(unitvec, pair))
+            if isinstance(pair[0], int) or isinstance(pair[1], int):
+                # == zero would raise exception for numpy arrays
+                return
+
+            hypsim = np.dot(*map(unitvec, pair))
+
+        yield "{0}_hypsim".format(self.name), hypsim
 
     def get_fourlang_feats(self, w1, w2):
+        for name, feat in self.hypsim(w1, w2):
+            yield name, feat
+
+        """
         hyp_sim = self.hypsim(w1, w2)
         if hyp_sim:
             yield "{0}_hyps".format(self.name), hyp_sim
         else:
             yield "{0}_hyps".format(self.name), 0
+        """
 
     def _featurize(self, w1, w2):
         sim = self.embedding.get_sim(w1, w2)
         if not sim:
             logging.debug("no sim: {0}".format(w1, w2, sim))
-            yield self.name, 0.0
-        else:
-            yield self.name, sim
+            sim = 0.0
+
+        yield self.name, sim
 
         if self.machine_model is not None:
             # fl_feats = list(self.get_fourlang_feats(w1, w2))
             # if fl_feats:
             #     print w1, w2, fl_feats
             #     quit()
+
             for name, value in self.get_fourlang_feats(w1, w2):
                 yield name, value
 
