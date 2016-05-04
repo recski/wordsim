@@ -2,6 +2,7 @@
 
 from ConfigParser import ConfigParser
 import logging
+import math
 import os
 import sys
 import time
@@ -9,7 +10,7 @@ import traceback
 
 from sklearn import cross_validation, svm
 from sklearn.feature_selection import VarianceThreshold, SelectKBest, f_regression  # nopep8
-from sklearn.pipeline import Pipeline
+# from sklearn.pipeline import Pipeline
 from scipy.stats import pearsonr, spearmanr
 from numpy import array
 
@@ -67,13 +68,20 @@ class Regression(object):
                 features_str += "\n"
             logging.info(features_str)
             return
-        self.pipeline = Pipeline(steps=[
-            # ('univ_select', SelectKBest(k=10, score_func=f_regression)),
-            ('variance', VarianceThreshold(threshold=0.00)),
-            ('model', svm.SVR(
-                C=100, cache_size=200, coef0=0.0, epsilon=0.5, gamma=0.1,
-                kernel='rbf', max_iter=-1, shrinking=True, tol=0.001,
-                verbose=False))])
+
+        view_feats = False
+        kernel = 'linear' if view_feats else 'rbf'
+        self.pipeline = svm.SVR(
+            C=100, cache_size=200, coef0=0.0, epsilon=0.5, gamma=0.1,
+            kernel=kernel, max_iter=-1, shrinking=True, tol=0.001,
+            verbose=False)
+        # self.pipeline = Pipeline(steps=[
+        #    # ('univ_select', SelectKBest(k=10, score_func=f_regression)),
+        #    ('variance', VarianceThreshold(threshold=0.00)),
+        #    ('model', svm.SVR(
+        #        C=100, cache_size=200, coef0=0.0, epsilon=0.5, gamma=0.1,
+        #        kernel='rbf', max_iter=-1, shrinking=True, tol=0.001,
+        #        verbose=False))])
 
         kf = cross_validation.KFold(len(self.data), n_folds=10)
         X, y = self.data, self.labels
@@ -86,6 +94,8 @@ class Regression(object):
             result_str += "{0}\t".format(headerItem)
         result_str += 'iteration\n'
 
+        feats_by_i = dict(((i, f) for f, i in self.feats.iteritems()))
+        feat_weights = dict(((f, 0.0) for f in self.feats))
         for train_index, test_index in kf:
             X_train, X_test = X[train_index], X[test_index]
             y_train, y_test = y[train_index], y[test_index]
@@ -97,6 +107,11 @@ class Regression(object):
                         f.write("{0}\t{1}\n".format(
                             " ".join(map(str, x)), y_train[i]))
                 traceback.print_exc()
+
+            if view_feats:
+                for i, w in enumerate(self.pipeline.coef_[0]):
+                    feat = feats_by_i[i]
+                    feat_weights[feat] += w
             p = self.pipeline.predict(X_test)
 
             # log result to file
@@ -112,6 +127,12 @@ class Regression(object):
             iter += 1
 
             corrs.append(spearmanr(p, y_test)[0])
+
+        if view_feats:
+            top_feats = sorted(
+                feat_weights.items(), key=lambda p: -math.fabs(p[1]))
+            for feat, weight in top_feats:
+                print "{0}\t{1}".format(feat, weight/10)
 
         print_results(result_str)
         logging.warning(
