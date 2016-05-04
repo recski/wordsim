@@ -48,8 +48,9 @@ class Featurizer(object):
         table = []
         header = ["word1", "word2"]
         for key in sample[0].features:
-            split = key.split("_similarity")
-            header.append(split[0])
+            header.append(key)
+            # split = key.split("_similarity")
+            # header.append(split[0])
         header.extend(["4lang", "SimLex", "diff"])
         for s in sample:
             table.append(s.pair)
