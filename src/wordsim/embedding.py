@@ -89,9 +89,9 @@ class TSVEmbedding(Embedding):
 type_to_class = {
     'word2vec': Word2VecEmbedding,
     'sympat': lambda fn: Word2VecEmbedding(fn, model_type='word2vec_txt'),
+    'glove': lambda fn: Word2VecEmbedding(fn, model_type='word2vec_txt'),
     'senna': TSVEmbedding,
-    'huang': TSVEmbedding,
-    'glove': GloveEmbedding}
+    'huang': TSVEmbedding}  # , 'glove': GloveEmbedding}
 
 
 test_set = [

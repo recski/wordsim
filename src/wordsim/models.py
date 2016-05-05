@@ -7,6 +7,8 @@ from embedding import type_to_class
 from gensim.matutils import unitvec
 import numpy as np
 
+from wordnet_cache import WordnetCache as Wordnet
+
 
 class Model(object):
     def __init__(self):
@@ -152,6 +154,19 @@ class DummyModel(Model):
             yield k, random.random()
 
 
+class WordnetModel(Model):
+
+    def _featurize(self, w1, w2):
+        s1 = Wordnet.get_significant_synsets(w1)
+        s2 = Wordnet.get_significant_synsets(w2)
+        yield 'wordnet_hyp', float(Wordnet.is_hypernym(s1, s2))
+        yield 'wordnet_2-hyp', float(Wordnet.is_two_link_hypernym(s1, s2))
+        yield 'wordnet_deriv_rel', float(
+            Wordnet.is_derivationally_related(s1, s2))
+        yield 'wordnet_in_glosses', float(
+            Wordnet.in_glosses(w1, w2, s1, s2))
+
+
 class MachineSimilarity():
 
     def __init__(self, sim_name, section, cfg):
@@ -212,6 +227,10 @@ def get_models(conf):
     models = {}
     if conf.getboolean('characters', 'enabled'):
         models['char'] = CharacterModel(conf)
+
+    if conf.getboolean('wordnet', 'enabled'):
+        models['wordnet'] = WordnetModel()
+
     for m_type in conf.options('machines'):
         try:
             d = conf.get('machines', m_type)
