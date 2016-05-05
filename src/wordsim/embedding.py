@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 
 from gensim.models import Word2Vec
@@ -60,7 +61,24 @@ class GloveEmbedding(Embedding):
             np.dot(vec1, vec2) / np.linalg.norm(vec1) / np.linalg.norm(vec2))
 
 
-class TSVEmbedding(Embedding):
+class CustomEmbedding(Embedding):
+    """superclass for embedding formats for which we write our own loaders"""
+    @staticmethod
+    def __init__(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def get_vec(self, w):
+        return self.model.get(w)
+
+    def get_sim(self, w1, w2):
+        vec1, vec2 = map(self.model.get, (w1, w2))
+        if vec1 is None or vec2 is None:
+            return None
+        return (
+            np.dot(vec1, vec2) / np.linalg.norm(vec1) / np.linalg.norm(vec2))
+
+
+class TSVEmbedding(CustomEmbedding):
     @staticmethod
     def load(fn):
         model = {}
@@ -75,23 +93,29 @@ class TSVEmbedding(Embedding):
         self.fn = fn
         self.model = TSVEmbedding.load(fn)
 
-    def get_vec(self, w):
-        return self.model.get(w)
 
-    def get_sim(self, w1, w2):
-        vec1, vec2 = map(self.model.get, (w1, w2))
-        if vec1 is None or vec2 is None:
-            return None
-        return (
-            np.dot(vec1, vec2) / np.linalg.norm(vec1) / np.linalg.norm(vec2))
+class JuditEmbedding(CustomEmbedding):
+    @staticmethod
+    def load(fn):
+        model = {}
+        matrix = np.load(fn)
+        dict_fn = os.path.join(os.path.dirname(fn), 'dict.txt')
+        for i, line in enumerate(open(dict_fn)):
+            word = line.strip().decode('utf-8')
+            model[word] = matrix[i]
 
+        return model
+
+    def __init__(self, fn):
+        self.model = JuditEmbedding.load(fn)
 
 type_to_class = {
     'word2vec': Word2VecEmbedding,
     'sympat': lambda fn: Word2VecEmbedding(fn, model_type='word2vec_txt'),
     'glove': lambda fn: Word2VecEmbedding(fn, model_type='word2vec_txt'),
     'senna': TSVEmbedding,
-    'huang': TSVEmbedding}  # , 'glove': GloveEmbedding}
+    'huang': TSVEmbedding,
+    'judit': JuditEmbedding}  # , 'glove': GloveEmbedding}
 
 
 test_set = [
