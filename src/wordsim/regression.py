@@ -146,8 +146,8 @@ def print_results(str):
     time_str = time.strftime("%H%M")
     date_str = time.strftime("%Y%m%d")
     file_str = 'results/res' + date_str + time_str + '.txt'
-    file = open(file_str, 'w')
-    file.write(str)
+    with open(file_str, 'w') as file:
+        file.write(str)
 
 
 def main():
