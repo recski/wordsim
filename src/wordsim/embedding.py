@@ -80,18 +80,22 @@ class CustomEmbedding(Embedding):
 
 class TSVEmbedding(CustomEmbedding):
     @staticmethod
-    def load(fn):
+    def load(fn, tab_first):
         model = {}
+        logging.info('loading {0}...'.format(fn))
         with open(fn) as f:
             for line in f:
-                word, vec_str = line.decode('utf-8').strip().split('\t')
+                if tab_first:
+                    word, vec_str = line.decode('utf-8').strip().split('\t')
+                else:
+                    word, vec_str = line.decode('utf-8').strip().split(' ', 1)
                 vec = np.array(map(float, vec_str.split()))
                 model[word] = vec
         return model
 
-    def __init__(self, fn):
+    def __init__(self, fn, tab_first=True):
         self.fn = fn
-        self.model = TSVEmbedding.load(fn)
+        self.model = TSVEmbedding.load(fn, tab_first)
 
 
 class JuditEmbedding(CustomEmbedding):
@@ -113,6 +117,8 @@ type_to_class = {
     'word2vec': Word2VecEmbedding,
     'sympat': lambda fn: Word2VecEmbedding(fn, model_type='word2vec_txt'),
     'glove': lambda fn: Word2VecEmbedding(fn, model_type='word2vec_txt'),
+    'paragram': lambda fn: TSVEmbedding(fn, tab_first=False),
+    'paragram_300': lambda fn: TSVEmbedding(fn, tab_first=False),
     'senna': TSVEmbedding,
     'huang': TSVEmbedding,
     'judit': JuditEmbedding}  # , 'glove': GloveEmbedding}
