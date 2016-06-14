@@ -11,8 +11,8 @@ download these embeddings and put them into the resources/embeddings folder.
 * [Huang](http://www.socher.org)
 * [word2vec](https://code.google.com/archive/p/word2vec/)
 * [GloVe](https://commoncrawl.org/)
-* [SP](http://www.cs.huji.ac.il/ ˜ roys02/papers/sp_embeddings/sp_embeddings.html)
-* [Paragram](http://ttic.uchicago.edu/ ˜ wieting/)
+* [SP](http://www.cs.huji.ac.il/~roys02/papers/sp_embeddings/sp_embeddings.html/)
+* [Paragram](http://ttic.uchicago.edu/~wieting/)
  
 **SimLex data:**
 download the simlex data and extract it into the resources/sim_data/simlex folder.
