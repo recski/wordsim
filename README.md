@@ -19,11 +19,13 @@ download the simlex data and extract it into the resources/sim_data/simlex folde
 * [SimLex](http://www.cl.cam.ac.uk/~fh295/SimLex-999.zip)
 
 ### Usage
+In the config/default.cfg file int the *[lemmatizer]* section, the *hunmorph_path* and the *cache_file* should be set to the appropriate path.
+
 The path to the [4lang](https://github.com/kornai/4lang/tree/master) folder must be defined as an environment variable with the following key: `FOURLANGPATH`.
 
 This'll run regression on features from 6 embeddings (6 features) + wordnet metrics (4 features) + 4lang (2 features)
 
-`python src/wordsim/regression.py configs/test.cfg`
+`python src/wordsim/regression.py configs/default.cfg`
 
 After running it, you should get the following output:
 
