@@ -42,7 +42,7 @@ wordsim
 ```
 
 ### Usage
-In the config/default.cfg file int the *[lemmatizer]* section, the *hunmorph_path* and the *cache_file* should be set to the appropriate path.
+In the config/default.cfg file int the `[lemmatizer]` section, the `hunmorph_path` and the `cache_file` should be set to the appropriate path.
 
 The path to the [4lang](https://github.com/kornai/4lang/tree/master) folder must be defined as an environment variable with the following key: `FOURLANGPATH`.
 
