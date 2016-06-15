@@ -1,11 +1,18 @@
 # wordsim
 
+### Preparations
+Building the components requires the build-essential and python-dev packages.
+
+```sudo apt-get install build-essential python-dev```
+
+You must also have [setuptools](https://pypi.python.org/pypi/setuptools) installed for python.
+
 ### Dependencies
 #### 4lang
-Install the newest version [4lang](https://github.com/kornai/4lang) 
+Install the newest version [4lang](https://github.com/kornai/4lang).
 
 #### gensim
-Install [gensim](https://radimrehurek.com/gensim/)
+Install [gensim](https://radimrehurek.com/gensim/).
 
 #### hunmisc
 Install the newest version of [hunmisc](https://github.com/zseder/hunmisc)
