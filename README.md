@@ -1,9 +1,14 @@
 # wordsim
 
-**Required dependencies:**
-* [gensim](https://radimrehurek.com/gensim/)
-* [4lang](https://github.com/kornai/4lang/tree/recski_thesis) (requires newest version, install with `sudo python setup.py install`)
-* [hunmisc](https://github.com/zseder/hunmisc) (see above)
+### Dependencies
+#### 4lang
+Install the newest version [4lang](https://github.com/kornai/4lang) 
+
+#### gensim
+Install [gensim](https://radimrehurek.com/gensim/)
+
+#### hunmisc
+Install the newest version of [hunmisc](https://github.com/zseder/hunmisc)
 
 **Required embeddings:**
 download these embeddings and place them into the `resources/embeddings` directory with the given subdirectory structures. 
