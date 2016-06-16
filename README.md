@@ -57,4 +57,4 @@ wordsim
 ## Usage
 Run `python src/wordsim/regression.py configs/default.cfg` to get regression on features from 6 embeddings (6 features) + wordnet metrics (4 features) + 4lang (2 features). You should get `average correlation: 0.755074732764` as the result.
 
-__NOTE: wordsim requires ca. 15 GB of RAM to load all models__'
+__NOTE: wordsim requires ca. 15 GB of RAM to load all models__
