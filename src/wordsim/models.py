@@ -183,7 +183,7 @@ class MachineModel(Model):
         self.ms = MachineSimilarity(name, name, conf)
 
     def _featurize(self, w1, w2):
-        features = self.ms.fourlang_sim.word_similarities(w1, w2)
+        features = self.ms.fourlang_sim.phrase_similarities(w1, w2)
         for orig_key, value in features.iteritems():
             key = "{0}_{1}".format(orig_key, self.name)
             yield key, value

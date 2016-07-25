@@ -66,10 +66,27 @@ class MENData(SimData):
         sim = float(fields[2])
         return w1, w2, sim
 
+class MLPARAData(SimData):
+    @staticmethod
+    def parse_line(line, line_no, pos_jn=True, pos_nn=True, pos_vn=True):
+        if line_no == 0:
+            return
+        fields = line.strip().decode('utf-8').split('\t')
+        if(not pos_jn and fields[3] == "JN"):
+            return
+        elif(not pos_nn and fields[3] == "NN"):
+            return
+        elif(not pos_vn and fields[3] == "VN"):
+            return
+        b1, b2 = fields[:2]
+        sim = float(fields[2])
+        return b1, b2, sim
+
 type_to_class = {
     'simlex': SimLexData,
     'men': MENData,
-    'ws353': WS353Data}
+    'ws353': WS353Data,
+    'mlpara' : MLPARAData}
 
 def test():
     """read similarity data from specified file and output top 5 word pairs"""
