@@ -94,6 +94,7 @@ class TSVEmbedding(CustomEmbedding):
                     try:
                         word, vec_str = line.decode('utf-8').strip().split('\t', 1)
                     except:
+                        logging.warning('skipping line: "{0}"'.format(line))
                         continue
                 else:
                     word, vec_str = line.decode('utf-8').strip().split(' ', 1)
