@@ -8,9 +8,9 @@ class SimDataFormatError(Exception):
 class SimData():
 
     @staticmethod
-    def create_from_file(file_name, data_type):
+    def create_from_file(file_name, data_type, conf):
         sd_type = type_to_class[data_type]
-        sd = sd_type()
+        sd = sd_type(conf)
         with open(file_name) as f:
             for line_no, line in enumerate(f):
                 try:
@@ -30,7 +30,7 @@ class SimData():
 
         return sd
 
-    def __init__(self):
+    def __init__(self, conf=None):
         self.pairs = {}
 
     def top_pairs(self, n):
@@ -67,16 +67,31 @@ class MENData(SimData):
         return w1, w2, sim
 
 class MLPARAData(SimData):
+    pos_jn = False
+    pos_nn = False
+    pos_vn = False
+
+    def __init__(self, conf):
+        SimData.__init__(self, conf)
+        pos_types = set(conf.get('composition', 'pos_types').upper().split('|'))
+        if 'JN' in pos_types:
+            MLPARAData.pos_jn = True
+        if 'NN' in pos_types:
+            MLPARAData.pos_nn = True
+        if 'VN' in pos_types:
+            MLPARAData.pos_vn = True
+
+
     @staticmethod
-    def parse_line(line, line_no, pos_jn=True, pos_nn=True, pos_vn=True):
+    def parse_line(line, line_no):
         if line_no == 0:
             return
         fields = line.strip().decode('utf-8').split('\t')
-        if(not pos_jn and fields[3] == "JN"):
+        if(not MLPARAData.pos_jn and fields[3] == "JN"):
             return
-        elif(not pos_nn and fields[3] == "NN"):
+        elif(not MLPARAData.pos_nn and fields[3] == "NN"):
             return
-        elif(not pos_vn and fields[3] == "VN"):
+        elif(not MLPARAData.pos_vn and fields[3] == "VN"):
             return
         b1, b2 = fields[:2]
         sim = float(fields[2])
