@@ -157,7 +157,7 @@ def get_data(conf):
         fn = conf.get('train_data', data_type)
         path = os.path.join(
             conf.get('global', 'data_path'), data_type, fn)
-        datasets[data_type] = SimData.create_from_file(path, data_type)
+        datasets[data_type] = SimData.create_from_file(path, data_type, conf)
     return datasets
 
 

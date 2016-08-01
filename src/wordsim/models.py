@@ -146,7 +146,6 @@ class EmbeddingModel(Model):
             for name, value in self.get_fourlang_feats(w1, w2):
                 yield name, value
 
-
 class DummyModel(Model):
 
     def _featurize(self, w1, w2):
@@ -183,7 +182,7 @@ class MachineModel(Model):
         self.ms = MachineSimilarity(name, name, conf)
 
     def _featurize(self, w1, w2):
-        features = self.ms.fourlang_sim.word_similarities(w1, w2)
+        features = self.ms.fourlang_sim.phrase_similarities(w1, w2)
         for orig_key, value in features.iteritems():
             key = "{0}_{1}".format(orig_key, self.name)
             yield key, value
@@ -225,45 +224,71 @@ class CharacterModel(Model):
 
 def get_models(conf):
     models = {}
-    if conf.getboolean('characters', 'enabled'):
-        models['char'] = CharacterModel(conf)
+    word_sim = conf.getboolean('similarity', 'word')
+    comp_sim = conf.getboolean('similarity', 'compositional')
 
-    if conf.getboolean('wordnet', 'enabled'):
-        models['wordnet'] = WordnetModel()
+    if word_sim:
+        if conf.getboolean('characters', 'enabled'):
+            models['char'] = CharacterModel(conf)
 
-    for m_type in conf.options('machines'):
-        try:
-            d = conf.get('machines', m_type)
-            model_name = 'similarity_machine_{0}'.format(d)
-            conf.options(model_name)
-        except NoSectionError:
-            continue
+        if conf.getboolean('wordnet', 'enabled'):
+            models['wordnet'] = WordnetModel()
+
+        for m_type in conf.options('machines'):
+            try:
+                d = conf.get('machines', m_type)
+                model_name = 'similarity_machine_{0}'.format(d)
+                conf.options(model_name)
+            except NoSectionError:
+                continue
+            else:
+                models[model_name] = MachineModel(conf, model_name)
+
+        if conf.getboolean('embeddings', 'enable_4lang'):
+            name = 'similarity_machine_{0}'.format(
+                conf.get('embeddings', '4lang_model'))
+            if name not in models:  # !!! do not put it there
+                fourlang_model_for_embeddings = MachineModel(conf, name)
+            else:
+                fourlang_model_for_embeddings = models[name]
+            freq_file = conf.get('global', 'freq_file')
         else:
-            models[model_name] = MachineModel(conf, model_name)
+            fourlang_model_for_embeddings = None
+            freq_file = None
 
-    if conf.getboolean('embeddings', 'enable_4lang'):
-        name = 'similarity_machine_{0}'.format(
-            conf.get('embeddings', '4lang_model'))
-        if name not in models:  # !!! do not put it there
-            fourlang_model_for_embeddings = MachineModel(conf, name)
-        else:
-            fourlang_model_for_embeddings = models[name]
-        freq_file = conf.get('global', 'freq_file')
-    else:
-        fourlang_model_for_embeddings = None
-        freq_file = None
-
-    for e_type in conf.options('embeddings'):
+        for e_type in conf.options('embeddings'):
+            try:
+                e_class = type_to_class[e_type]
+            except KeyError:
+                continue
+            else:
+                fn = conf.get('embeddings', e_type)
+                path = os.path.join(
+                    conf.get('global', 'embeddings_path'), e_type, fn)
+                embedding = e_class(path)
+                model = EmbeddingModel(
+                    embedding, e_type, fourlang_model_for_embeddings, freq_file)
+                models[e_type] = model
+    elif comp_sim:
+        sim_types = conf.get('composition', 'sim_types').split('|')
+        e_type = conf.get('composition', 'embedding')
         try:
             e_class = type_to_class[e_type]
         except KeyError:
-            continue
+            logging.error('embedding type {0} does not exist'.format(e_type))
         else:
             fn = conf.get('embeddings', e_type)
             path = os.path.join(
                 conf.get('global', 'embeddings_path'), e_type, fn)
             embedding = e_class(path)
-            model = EmbeddingModel(
-                embedding, e_type, fourlang_model_for_embeddings, freq_file)
-            models[e_type] = model
+        for c_type in sim_types:
+            try:
+                c_class = type_to_class[c_type]
+            except KeyError:
+                continue
+            else:
+                comp_model = c_class(embedding)
+                model = EmbeddingModel(comp_model, c_type)
+                models[c_type] = model
+
     return models.values()

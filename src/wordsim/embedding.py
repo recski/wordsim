@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import pickle
 
 from gensim.models import Word2Vec
 from glove import Glove
@@ -71,7 +72,7 @@ class CustomEmbedding(Embedding):
         return self.model.get(w)
 
     def get_sim(self, w1, w2):
-        vec1, vec2 = map(self.model.get, (w1, w2))
+        vec1, vec2 = map(self.get_vec, (w1, w2))
         if vec1 is None or vec2 is None:
             return None
         return (
@@ -81,16 +82,26 @@ class CustomEmbedding(Embedding):
 class TSVEmbedding(CustomEmbedding):
     @staticmethod
     def load(fn, tab_first):
+        # pickle_file = fn.split('.')[0] + 'pickle'
+        # if os.path.exists(pickle_file):
+        #     return pickle.load( open( pickle_file, "rb" ) )
+
         model = {}
         logging.info('loading {0}...'.format(fn))
         with open(fn) as f:
             for line in f:
                 if tab_first:
-                    word, vec_str = line.decode('utf-8').strip().split('\t')
+                    try:
+                        word, vec_str = line.decode('utf-8').strip().split('\t', 1)
+                    except:
+                        logging.warning('skipping line: "{0}"'.format(line))
+                        continue
                 else:
                     word, vec_str = line.decode('utf-8').strip().split(' ', 1)
                 vec = np.array(map(float, vec_str.split()))
                 model[word] = vec
+
+        # pickle.dump( model, open( pickle_file, "wb" ) )
         return model
 
     def __init__(self, fn, tab_first=True):
@@ -113,15 +124,36 @@ class JuditEmbedding(CustomEmbedding):
     def __init__(self, fn):
         self.model = JuditEmbedding.load(fn)
 
+
+class CompositionalEmbedding(CustomEmbedding):
+
+    def __init__(self, embedding):
+        self.model = embedding.model
+
+    def _compose(self, vectors):
+        raise NotImplementedError
+
+    def get_vec(self, w):
+        words = w.split(' ')
+        vectors = map(self.model.get, words)
+        return self._compose(vectors)
+
+
+class AdditionalEmbedding(CompositionalEmbedding):
+
+    def _compose(self, vectors):
+        return sum(vectors)
+
 type_to_class = {
     'word2vec': Word2VecEmbedding,
     'sympat': lambda fn: Word2VecEmbedding(fn, model_type='word2vec_txt'),
     'glove': lambda fn: Word2VecEmbedding(fn, model_type='word2vec_txt'),
-    'paragram': lambda fn: TSVEmbedding(fn, tab_first=False),
+    'paragram': lambda fn: TSVEmbedding(fn),
     'paragram_300': lambda fn: TSVEmbedding(fn, tab_first=False),
     'senna': TSVEmbedding,
     'huang': TSVEmbedding,
-    'judit': JuditEmbedding}  # , 'glove': GloveEmbedding}
+    'judit': JuditEmbedding,
+    'addition': AdditionalEmbedding}  # , 'glove': GloveEmbedding}
 
 
 test_set = [
