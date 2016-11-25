@@ -1,7 +1,6 @@
 import logging
 import os
 import sys
-import pickle
 
 from gensim.models import Word2Vec
 from glove import Glove
@@ -53,9 +52,15 @@ class GloveEmbedding(Embedding):
         self.fn = fn
         self.model = Glove.load_stanford(fn)
 
-    def get_sim(self, w1, w2):
-        if w1 not in self.model.dictionary or w2 not in self.model.dictionary:
+    def get_vec(self, word):
+        if word not in self.model.dictionary:
             return None
+        i = self.model.dictionary[word]
+        return self.model.word_vectors[i]
+
+    def get_sim(self, w1, w2, fallback=None):
+        if w1 not in self.model.dictionary or w2 not in self.model.dictionary:
+            return fallback
         id1, id2 = map(self.model.dictionary.get, (w1, w2))
         vec1, vec2 = map(lambda i: self.model.word_vectors[i], (id1, id2))
         return (
@@ -92,7 +97,8 @@ class TSVEmbedding(CustomEmbedding):
             for line in f:
                 if tab_first:
                     try:
-                        word, vec_str = line.decode('utf-8').strip().split('\t', 1)
+                        word, vec_str = line.decode(
+                            'utf-8').strip().split('\t', 1)
                     except:
                         logging.warning('skipping line: "{0}"'.format(line))
                         continue
@@ -144,6 +150,7 @@ class AdditionalEmbedding(CompositionalEmbedding):
     def _compose(self, vectors):
         return sum(vectors)
 
+
 type_to_class = {
     'word2vec': Word2VecEmbedding,
     'sympat': lambda fn: Word2VecEmbedding(fn, model_type='word2vec_txt'),
@@ -166,6 +173,7 @@ def test():
     model = e_class(fn)
     for w1, w2 in test_set:
         print "{0}\t{1}\t{2}".format(w1, w2, model.get_sim(w1, w2))
+
 
 if __name__ == "__main__":
     test()
