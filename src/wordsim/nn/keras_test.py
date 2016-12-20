@@ -1,5 +1,4 @@
 import logging
-import random
 import sys
 
 from keras.layers import Dense, Activation
@@ -8,21 +7,7 @@ import numpy as np
 from scipy.stats import spearmanr
 
 from embedding import GloveEmbedding
-
-
-def cut(data):
-    random.seed("lemon and tea")
-    random_order = list(range(len(data)))
-    random.shuffle(random_order)
-    cut_point1 = int(len(data)*0.9)
-    cut_point2 = int(len(data)*0.95)
-    train_data = [data[i] for i in random_order[:cut_point1]]
-    devel_data = [data[i] for i in random_order[cut_point1:cut_point2]]
-    test_data = [data[i] for i in random_order[cut_point2:]]
-    logging.info(
-        "created datasets: {0} in train, {1} in devel, {2} in test".format(
-            len(train_data), len(devel_data), len(test_data)))
-    return train_data, devel_data, test_data
+from utils import cut
 
 
 def create_model(input_dim, output_dim):
@@ -81,7 +66,7 @@ def test():
     input_dim = X_train.shape[1]
     output_dim = 1
     model = create_model(input_dim, output_dim)
-    model.fit(X_train, Y_train, nb_epoch=50, batch_size=32)
+    model.fit(X_train, Y_train, nb_epoch=int(sys.argv[4]), batch_size=32)
 
     X_devel = featurize(devel_data, glove_embedding, dim)
     Y_devel = np.array([e[1] for e in devel_data])
