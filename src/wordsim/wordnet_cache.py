@@ -3,7 +3,6 @@ import nltk
 from collections import defaultdict
 
 from resources import Resources
-Resources.ensure_nltk_packages()
 
 
 class SynsetWrapper(object):
@@ -97,7 +96,7 @@ class WordnetCache(object):
 
     @staticmethod
     def get_significant_synsets(word):
-        if not word in WordnetCache.synsets:
+        if word not in WordnetCache.synsets:
             candidates = nltk.corpus.wordnet.synsets(word)
             if len(candidates) == 0:
                 WordnetCache.synsets[word] = set()
@@ -117,7 +116,7 @@ class WordnetCache(object):
 
     @staticmethod
     def get_senses(word, sense_num=10):
-        if not word in WordnetCache.senses:
+        if word not in WordnetCache.senses:
             WordnetCache.senses[word] = set([word])
             sn = nltk.corpus.wordnet.synsets(word)
             if len(sn) >= sense_num:
@@ -156,9 +155,9 @@ class WordnetCache(object):
                 return 1
             if WordnetCache.is_two_link_similar_to(adj1, adj2):
                 return 2
-        #TODO decide whether this should go to config or delete it
-        #if WordnetCache.is_derivationally_related(s1, s2):
-            #return 1
+        # TODO decide whether this should go to config or delete it
+        # if WordnetCache.is_derivationally_related(s1, s2):
+            # return 1
         if WordnetCache.in_glosses(word1, word2, s1, s2):
             return 2
         return None
@@ -179,7 +178,8 @@ class WordnetCache(object):
 
     @staticmethod
     def in_glosses(word1, word2, synsets1, synsets2):
-        if WordnetCache.in_one_glosses(word1, synsets2) or WordnetCache.in_one_glosses(word2, synsets1):
+        if (WordnetCache.in_one_glosses(word1, synsets2) or
+                WordnetCache.in_one_glosses(word2, synsets1)):
             return True
         return False
 

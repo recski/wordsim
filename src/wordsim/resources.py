@@ -4,16 +4,19 @@ import math
 import nltk
 
 
+def ensure_nltk_packages():
+    for package in ('stopwords', 'punkt', 'wordnet'):
+        nltk.download(package, quiet=True)
+
+
+ensure_nltk_packages()
+
+
 class Resources(object):
 
     @staticmethod
     def set_config(conf):
         Resources.conf = conf
-
-    @staticmethod
-    def ensure_nltk_packages():
-        for package in ('stopwords', 'punkt', 'wordnet'):
-            nltk.download(package, quiet=True)
 
     """ Thresholds """
     adverb_threshold = math.log(500000)
