@@ -48,7 +48,7 @@ wordsim
 * [Huang](http://www.socher.org): download and extract the [ACL2012_wordVectorsTextFile.zip ](http://nlp.stanford.edu/~socherr/ACL2012_wordVectorsTextFile.zip) file, and execute the `paste vocab.txt wordVectors.txt > combined.txt` command.
 * [word2vec](https://code.google.com/archive/p/word2vec/): download and extract the [GoogleNews-vectors-negative300.bin.gz](https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?usp=sharing) file.
 * [GloVe](http://nlp.stanford.edu/projects/glove/): download and extract the [glove.840B.300d.zip](http://nlp.stanford.edu/data/glove.840B.300d.zip) file.
-* [SP](http://www.cs.huji.ac.il/~roys02/papers/sp_embeddings/sp_embeddings.html/): download and extract the [sp_plus_embeddings_500.dat.gz](http://www.cs.huji.ac.il/~roys02/papers/sp_embeddings/sp_plus_embeddings_500.dat.gz) file. Insert the `152229 500` line at the beginning of the .dat file with `echo '152229 500' | cat - sp_plus_embeddings_500.dat > sp_plus_embeddings_500.w2v`.
+* [SP](http://www.cs.huji.ac.il/~roys02/papers/sp_embeddings/sp_embeddings.html/): download and extract the [sp_plus_embeddings_500.dat.gz](http://ie.technion.ac.il/~roiri/data/sp_plus_embeddings_500.dat.gz) file. Insert the `152229 500` line at the beginning of the .dat file with `echo '152229 500' | cat - sp_plus_embeddings_500.dat > sp_plus_embeddings_500.w2v`.
 * [Paragram](http://ttic.uchicago.edu/~wieting/): download and extract the [paragram_300_sl999.zip](https://drive.google.com/file/d/0B9w48e1rj-MOck1fRGxaZW1LU2M/view?usp=sharing) file.
 
 ### SimLex data
