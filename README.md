@@ -58,3 +58,21 @@ wordsim
 Run `python src/wordsim/regression.py configs/default.cfg` to get regression on features from 6 embeddings (6 features) + wordnet metrics (4 features) + 4lang (2 features). You should get `average correlation: 0.755074732764` as the result.
 
 __NOTE: wordsim requires ca. 15 GB of RAM to load all models__
+
+## Citing
+If you use the wordsim system in your experiments, please cite
+
+Gábor Recski, Eszter Iklódi, Katalin Pajkossy, András Kornai: [Measuring semantic similarity of words using concept networks](https://www.aclweb.org/anthology/W16-1622.pdf)
+In: Proceedings of the 1st Workshop on Representation Learning for NLP, 2016
+
+```
+@InProceedings{Recski:2016c,
+  author    = {Recski, G\'{a}bor  and  Ikl\'{o}di, Eszter  and  Pajkossy, Katalin  and  Kornai, Andras},
+  title     = {Measuring Semantic Similarity of Words Using Concept Networks},
+  booktitle = {Proceedings of the 1st Workshop on Representation Learning for NLP},
+  year      = {2016},
+  address   = {Berlin, Germany},
+  publisher = {Association for Computational Linguistics},
+  pages     = {193--200}
+}
+```
