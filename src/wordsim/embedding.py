@@ -2,7 +2,8 @@ import logging
 import os
 import sys
 
-from gensim.models import Word2Vec
+# from gensim.models import Word2Vec
+from gensim.models import KeyedVectors
 from glove import Glove
 import numpy as np
 
@@ -20,11 +21,11 @@ class Word2VecEmbedding(Embedding):
     def load_model(model_fn, model_type):
         logging.info('Loading model: {0}'.format(model_fn))
         if model_type == 'word2vec':
-            model = Word2Vec.load_word2vec_format(model_fn, binary=True)
+            model = KeyedVectors.load_word2vec_format(model_fn, binary=True)
         elif model_type == 'word2vec_txt':
-            model = Word2Vec.load_word2vec_format(model_fn, binary=False)
+            model = KeyedVectors.load_word2vec_format(model_fn, binary=False)
         elif model_type == 'gensim':
-            model = Word2Vec.load(model_fn)
+            model = KeyedVectors.load(model_fn)
         else:
             raise Exception('Unknown model format')
         logging.info('Model loaded: {0}'.format(model_fn))
@@ -95,15 +96,16 @@ class TSVEmbedding(CustomEmbedding):
         logging.info('loading {0}...'.format(fn))
         with open(fn) as f:
             for line in f:
-                if tab_first:
-                    try:
+                try:
+                    if tab_first:
                         word, vec_str = line.decode(
                             'utf-8').strip().split('\t', 1)
-                    except:
-                        logging.warning('skipping line: "{0}"'.format(line))
-                        continue
-                else:
-                    word, vec_str = line.decode('utf-8').strip().split(' ', 1)
+                    else:
+                        word, vec_str = line.decode(
+                            'utf-8').strip().split(' ', 1)
+                except UnicodeDecodeError:
+                    logging.warning('skipping line: "{0}"'.format(line))
+                    continue
                 vec = np.array(map(float, vec_str.split()))
                 model[word] = vec
 
