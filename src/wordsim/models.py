@@ -281,6 +281,7 @@ def get_word_models(conf):
                 freq_file)
             models[e_type] = model
 
+    return models
 
 def get_comp_models(conf):
     models = {}
@@ -304,6 +305,8 @@ def get_comp_models(conf):
             comp_model = c_class(embedding)
             model = EmbeddingModel(comp_model, c_type)
             models[c_type] = model
+
+    return models
 
 
 def get_vector_models(conf):
