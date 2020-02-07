@@ -8,7 +8,9 @@ import sys
 import time
 import traceback
 
-from sklearn import cross_validation, svm
+from sklearn import svm
+from sklearn.model_selection import KFold
+# from sklearn import cross_validation, svm
 from sklearn.feature_selection import VarianceThreshold, SelectKBest, f_regression  # nopep8
 # from sklearn.pipeline import Pipeline
 from scipy.stats import pearsonr, spearmanr
@@ -83,7 +85,8 @@ class Regression(object):
         #        kernel='rbf', max_iter=-1, shrinking=True, tol=0.001,
         #        verbose=False))])
 
-        kf = cross_validation.KFold(len(self.data), n_folds=10)
+        # kf = cross_validation.KFold(len(self.data), n_folds=10)
+        kf = KFold(n_splits=10)
         X, y = self.data, self.labels
         corrs = []
 
@@ -96,7 +99,7 @@ class Regression(object):
 
         feats_by_i = dict(((i, f) for f, i in self.feats.iteritems()))
         feat_weights = dict(((f, 0.0) for f in self.feats))
-        for train_index, test_index in kf:
+        for train_index, test_index in kf.split(X):
             X_train, X_test = X[train_index], X[test_index]
             y_train, y_test = y[train_index], y[test_index]
             try:
